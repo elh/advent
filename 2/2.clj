@@ -1,9 +1,7 @@
 (require '[clojure.string :as str])
 
 (when (not= (count *command-line-args*) 1)
-  (do
-    (println "expects exactly one command line arg. EXIT")
-    (. System exit 1)))
+  (throw (Exception. (format "FAIL: expects 1 cmdline arg. got: %d" (count *command-line-args*)))))
 
 (def inputs
   (vec
@@ -24,7 +22,7 @@
        (let [nextprogram (cond
                            (= op 1) (assoc program (get f 3) (+  (get program (get f 1)) (get program (get f 2)))) ; add
                            (= op 2) (assoc program (get f 3) (* (get program (get f 1)) (get program (get f 2)))) ; mult
-                           :else (println "ERROR"))]
+                           :else (throw (Exception. (format "FAIL: unexpected opcode. got: %d" op))))]
          (step nextprogram (+ pc 1)))))))
 
 (defn setup [program noun verb]
