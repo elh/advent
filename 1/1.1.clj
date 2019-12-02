@@ -10,6 +10,6 @@
 
 (def inputs (clojure.string/split-lines (slurp (first *command-line-args*))))
 
-(println (reduce + (map fuel (map read-string inputs))))
+(println (time (reduce + (map fuel (map read-string inputs)))))
 
 ; CORRECT: 3479429

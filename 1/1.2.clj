@@ -7,15 +7,16 @@
 ; However, that fuel also requires fuel, and that fuel requires fuel, and so on. Any mass that would require
 ; negative fuel should instead be treated as if it requires zero fuel; the remaining mass, if any, is instead
 ; handled by wishing really hard, which has no mass and is outside the scope of this calculation.
-(defn fuel [mass]
-  (let [massfuel (max (- (int (Math/floor (/ mass 3))) 2) 0)]
-    (if (= massfuel 0)
-      massfuel
-      (+ massfuel (fuel massfuel))))
-  )
+(defn fuel
+  ([mass] (fuel mass 0))
+  ([mass sum]
+   (let [massfuel (max (- (int (Math/floor (/ mass 3))) 2) 0)]
+     (if (= massfuel 0)
+       sum
+       (recur massfuel (+ sum massfuel))))))
 
 (def inputs (clojure.string/split-lines (slurp (first *command-line-args*))))
 
-(println (reduce + (map fuel (map read-string inputs))))
+(println (time (reduce + (map fuel (map read-string inputs)))))
 
 ; CORRECT: 5216273
