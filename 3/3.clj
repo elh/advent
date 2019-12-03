@@ -18,25 +18,10 @@
       (= dir "D") [(first start) (- (second start) i)]
       :else (throw (Exception. (format "FAIL: unexpected direction. got: %d" dir))))))
 
-; outputs [end points] idx 0 is a vector of x y. idx 1 is set of points
-(defn makepoints [linevec]
-  ; data is [start points]. idx 0 is a vector of x y. idx 1 is set of points
-  (reduce (fn [data segment] 
-            (let [dir (subs segment 0 1)
-                  mag (read-string (subs segment 1 (count segment)))
-                  segmentps (walk (first data) dir mag)]
-              (reduce (fn [d p] [p (conj (second d) p)])
-                      data
-                      segmentps)))
-          [[0 0] (hash-set)]
-          linevec))
-
-(defn wiredelay [target ptlist]
-    (.indexOf ptlist target))
-
-; like makepoints but just returns a vector of points in order of visitation
+; returns a vector of points walked
 (defn pointslist [linevec]
   (second
+   ; data is [start points]. idx 0 is a vector of x y. idx 1 is vector of points
    (reduce (fn [data segment]
              (let [dir (subs segment 0 1)
                    mag (read-string (subs segment 1 (count segment)))
@@ -44,11 +29,14 @@
                (reduce (fn [d p] [p (conj (second d) p)])
                        data
                        segmentps)))
-           [[0 0] [[0 0]]]
+           [[0 0] []]
            linevec)))
 
 (defn manhattan [point]
   (+ (Math/abs (first point)) (Math/abs (second point))))
+
+(defn wiredelay [target ptlist]
+  (+ (.indexOf ptlist target) 1))
 
 (defn closestintersect [points1 points2] 
   (first (sort (fn [a b] 
@@ -60,8 +48,8 @@
 (defn p1 [inputs]
   (manhattan 
    (closestintersect 
-    (second (makepoints (first inputs))) 
-    (second (makepoints (second inputs))))))
+    (into #{} (pointslist (first inputs)))
+    (into #{} (pointslist (second inputs))))))
 
 (defn p2 [inputs]
   (let [wire1 (first inputs)
@@ -69,8 +57,8 @@
         wire1pts (pointslist wire1)
         wire2pts (pointslist wire2)
         intersections (clojure.set/intersection
-                       (second (makepoints wire1))
-                       (second (makepoints wire2)))]
+                       (into #{} wire1pts)
+                       (into #{} wire2pts))]
     (reduce (fn [mindelay intersect]
               (min mindelay (+ (wiredelay intersect wire1pts) (wiredelay intersect wire2pts))))
             Integer/MAX_VALUE
