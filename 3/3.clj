@@ -31,19 +31,21 @@
           [[0 0] (hash-set)]
           linevec))
 
-; NOTE: I solved pt 2 additively since I am still not familiar with clojure structs so perf is horrific
-; TODO: easy. can still do additively with lower perf by only generating wire delay once
-(defn wiredelay [target linevec]
-  (let [pts (reduce (fn [data segment]
-                      (let [dir (subs segment 0 1)
-                            mag (read-string (subs segment 1 (count segment)))
-                            segmentps (walk (first data) dir mag)]
-                        (reduce (fn [d p] [p (conj (second d) p)])
-                                data
-                                segmentps)))
-                    [[0 0] [[0 0]]]
-                    linevec)]
-    (.indexOf (second pts) target)))
+(defn wiredelay [target ptlist]
+    (.indexOf ptlist target))
+
+; like makepoints but just returns a vector of points in order of visitation
+(defn pointslist [linevec]
+  (second
+   (reduce (fn [data segment]
+             (let [dir (subs segment 0 1)
+                   mag (read-string (subs segment 1 (count segment)))
+                   segmentps (walk (first data) dir mag)]
+               (reduce (fn [d p] [p (conj (second d) p)])
+                       data
+                       segmentps)))
+           [[0 0] [[0 0]]]
+           linevec)))
 
 (defn manhattan [point]
   (+ (Math/abs (first point)) (Math/abs (second point))))
@@ -64,11 +66,13 @@
 (defn p2 [inputs]
   (let [wire1 (first inputs)
         wire2 (second inputs)
+        wire1pts (pointslist wire1)
+        wire2pts (pointslist wire2)
         intersections (clojure.set/intersection
                        (second (makepoints wire1))
                        (second (makepoints wire2)))]
     (reduce (fn [mindelay intersect]
-              (min mindelay (+ (wiredelay intersect wire1) (wiredelay intersect wire2))))
+              (min mindelay (+ (wiredelay intersect wire1pts) (wiredelay intersect wire2pts))))
             Integer/MAX_VALUE
             intersections)))
 
