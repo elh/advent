@@ -9,7 +9,7 @@ import sys
 
 # Get cookies from the browser
 cj = browser_cookie3.chrome()
-    
+
 # Get today number of day
 day_today = date.today().strftime("%d").lstrip("0")
 
