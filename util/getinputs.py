@@ -6,8 +6,8 @@ import browser_cookie3
 import sys
 
 # USAGE:
-# python3 getinputs.py <year> <day
-# python3 getinputs.py 2019 25
+# python3 util/getinputs.py <year> <day
+# python3 util/getinputs.py 2019 25
 
 # Get cookies from the browser
 cj = browser_cookie3.chrome()
@@ -34,5 +34,5 @@ if not os.path.exists(f"day{day}"):
         pass
     os.chdir(f"{day}")
     r = requests.get(f"https://adventofcode.com/{year}/day/{day}/input", cookies = cj)
-    with open(f"input{day}.txt","w") as f:
+    with open(f"../{year}/{day}/input{day}.txt","w") as f:
         f.write(r.text)
