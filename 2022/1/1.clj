@@ -3,23 +3,19 @@
 (when (not= (count *command-line-args*) 1)
   (throw (Exception. (format "FAIL: expects 1 cmdline arg. got: %d" (count *command-line-args*)))))
 
-(def inputs
-  (map str/trim-newline
-       (str/split (slurp (first *command-line-args*)) #"\n")))
+; as vector
+(def input
+  (vec (map str/trim-newline (str/split (slurp (first *command-line-args*)) #"\n"))))
 
 (defn elves [calorie-list]
-  (letfn
-   [(agg [vs v]
-         (if (str/blank? v)
-           (conj vs 0)
-           (conj (vec (butlast vs)) (+ (last vs) (Integer/parseInt v)))))]
-    (reduce agg [0] (vec calorie-list))))
-
-(defn top-n-elves [n elves]
-  (take n (sort (fn [a b] (compare b a)) elves)))
+  (letfn [(agg [vs v]
+               (if (str/blank? v)
+                 (conj vs 0)
+                 (conj (vec (butlast vs)) (+ (last vs) (Integer/parseInt v)))))]
+    (reduce agg [0] calorie-list)))
 
 ; part 1
-(println (apply max (elves inputs)))
+(println (apply max (elves input)))
 
 ; part 2
-(println (reduce + (top-n-elves 3 (elves inputs))))
+(println (reduce + (take-last 3 (sort (elves input)))))

@@ -12,18 +12,16 @@ import sys
 # Get cookies from the browser
 cj = browser_cookie3.chrome()
 
-# Get today number of day
-day_today = date.today().strftime("%d").lstrip("0")
-
-# If we provide an argument, use it as the desired day. Ex: ./startDay.py 5. Otherwise use day_today
+# If we provide arguments, read them as the year and day. Otherwise, use today
 if len(sys.argv) > 2:
     year = int(sys.argv[1])
     day = int(sys.argv[2])
-    if day<0 or day>31 or day>int(day_today):
-        exit("Day is not valid")
+elif len(sys.argv) > 1:
+    year = int(sys.argv[1])
+    day = date.today().strftime("%d").lstrip("0")
 else:
-    day = day_today
-
+    year = date.today().year
+    day = date.today().strftime("%d").lstrip("0")
 
 print(f"Initializing day {day}")
 
