@@ -1,3 +1,3 @@
 # advent 🎄
 
-[Advent of Code](https://adventofcode.com/)
+Learning Clojure via [Advent of Code](https://adventofcode.com/).
