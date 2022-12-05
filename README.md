@@ -1,13 +1,6 @@
-# advent 🎄
+# advent-2019 🎄
 
-Learning Clojure via [Advent of Code](https://adventofcode.com/).
+Learning Clojure via [Advent of Code](https://adventofcode.com/). This was very short-lived but it was fun getting the basic interpreter working.
 
-## 2022 (in progress)
-
-At the moment, I have no project or test set up. Each day is solved in a separate file I just run as main w/ an input file.
-
-Example:
-```
-clj -M 2022/4/4.clj 2022/4/example-input.txt
-clj -M 2022/4/4.clj 2022/4/input.txt
-```
+https://esolangs.org/wiki/Intcode
+> With the addition of control flow on day 5, Intcode is powerful enough to be Turing-complete.
