@@ -1,2 +1,5 @@
 .lsp/
 .clj-kondo/
+
+# advent of code inputs
+inputs/
