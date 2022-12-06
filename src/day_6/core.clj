@@ -1,4 +1,5 @@
-(require '[clojure.string :as str])
+(ns day-6.core
+  (:require [clojure.string :as str]))
 
 (defn read-input [file-name]
   (vec (map str/trim-newline (str/split (slurp file-name) #"\n"))))
@@ -46,8 +47,8 @@
         d2 (first (indices #(= ca %) a2))]
     (+ d1 d2)))
 
-; main
-(when (not= (count *command-line-args*) 1) (throw (Exception. "FAIL: expects input file as cmdline arg.")))
-(let [input (read-input (first *command-line-args*))]
-  (println "part 1:" (count-orbits (build-graph input)))
-  (println "part 2:" (orbital-transfers (build-graph input) "YOU" "SAN")))
+(defn -main [& args]
+  (when (not= (count args) 1) (throw (Exception. "FAIL: expects input file as cmdline arg.")))
+  (let [input (read-input (first args))]
+    (println "part 1:" (count-orbits (build-graph input)))
+    (println "part 2:" (orbital-transfers (build-graph input) "YOU" "SAN"))))
