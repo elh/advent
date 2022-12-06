@@ -40,8 +40,6 @@
 ; Intcode computer
 (def pt1 (setup inputs 12 2))
 (println (time (step pt1)))
-; CORRECT: 2692315
 
 ; Pt 2
 (println (time (bruteforce inputs 19690720)))
-; CORRECT: [95 7]

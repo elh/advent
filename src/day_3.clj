@@ -66,8 +66,6 @@
 
 ; p1
 (println (time (p1 inputs)))
-; CORRECT: 651
 
 ; p2
 (println (time (p2 inputs)))
-; CORRECT: 7534

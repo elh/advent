@@ -115,8 +115,6 @@
 
 ; pt 1
 (println (time (run inputs 1)))
-; CORRECT: 6731945
 
 ; pt 2
 (println (time (run inputs 5)))
-; CORRECT: 9571668

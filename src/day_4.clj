@@ -36,9 +36,7 @@
 
 ; p1
 (println (time (count (validperms 108457 562041))))
-; CORRECT: 2779
 
 ; p2
 (println (time (count (pt2perms 108457 562041))))
-; CORRECT: 1972
 

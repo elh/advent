@@ -1,4 +1,4 @@
-(ns day-6.core
+(ns day-6
   (:require [clojure.string :as str]))
 
 (defn read-input [file-name]
