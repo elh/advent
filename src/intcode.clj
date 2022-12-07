@@ -1,5 +1,10 @@
-(ns day-5-clean
+(ns intcode
   (:require [clojure.string :as str]))
+
+;; elh's Intcode machine
+;; NOTE: Last updated for 2019 day 5
+
+(def verbose false)
 
 ;; Opcodes
 (def ADD 1)
@@ -27,7 +32,7 @@
      :rawop (last padded-ds)}))
 
 (defn- frame
-  "Read instruction frame at the program counter"
+  "Read instruction frame at the program counter."
   [program pc]
   (let [l (condp = (:rawop (param-mode-code (nth program pc)))
             IN 2
@@ -52,7 +57,9 @@
    (let [f (frame program pc)
          op (first f)]
      (if (= op HALT)
-       outputs
+       (do
+         (when verbose (println program))
+         outputs)
        (let [pm-code (param-mode-code op)
              arg1 (read-v program (get f 1) (:1stmode pm-code))
              arg2 (read-v program (get f 2) (:2ndmode pm-code))
@@ -82,9 +89,3 @@
   "Parse Intcode program from string to vector of integers."
   [s]
   (vec (map #(Integer/parseInt %) (map str/trim-newline (str/split s #",")))))
-
-(defn -main [& args]
-  (when (not= (count args) 1) (throw (Exception. "FAIL: expects input file as cmdline arg.")))
-  (let [program (parse-program (slurp (first args)))]
-    (println "PART 1:" (time (run program 1)))
-    (println "PART 2:" (time (run program 5)))))
