@@ -1,11 +1,23 @@
 (ns day-5-clean
   (:require [clojure.string :as str]))
 
-;; copied this from SO
+;; opcodes
+(def ADD 1)
+(def MUL 2)
+(def IN 3)
+(def OUT 4)
+(def JMPT 5)
+(def JMPF 6)
+(def LT 7)
+(def EQ 8)
+(def HALT 99)
+
+;; integer as vector of digits
 (defn digits [n]
   (for [d (str n)]
     (- (byte d) 48)))
 
+;; parse instruction parameter mode and opcode
 (defn param-mode-code [op]
   (let [ds (digits op)
         padded-ds (concat (for [_ (range (- 5 (count ds)))] 0) ds)]
@@ -14,55 +26,47 @@
      :3rdmode (nth padded-ds 0)
      :rawop (last padded-ds)}))
 
+;; instruction frame
 (defn frame [program pc]
-  (let [l (case (get (param-mode-code (nth program pc)) :rawop)
-            3 2
-            4 2
-            5 3
-            6 3
-            99 1
+  (let [l (condp = (get (param-mode-code (nth program pc)) :rawop)
+            IN 2
+            OUT 2
+            JMPT 3
+            JMPF 3
+            HALT 1
             4)]
     (subvec program pc (min (+ pc l) (count program)))))
 
+;; read value respecting parameter mode: immediate or position
 (defn readv [program value mode]
   (if (= mode 1)
-    value                 ;; immediate
-    (get program value))) ;; positional
+    value
+    (get program value)))
 
 (defn run
   ([program input] (run program input 0 []))
   ([program input pc outputs]
    (let [f (frame program pc)
          op (first f)]
-     (if (= op 99) ;; exit
-       (do
-         (println "exit!")
-         outputs)
+     (if (= op HALT)
+       outputs
        (let [pm-code (param-mode-code op)
-             nextprogram-pc (case (get pm-code :rawop)
-                              ;; add
-                              1 {:pc (+ pc (count f))
+             nextprogram-pc (condp = (get pm-code :rawop)
+                              ADD {:pc (+ pc (count f))
                                  :program (assoc program (get f 3) (+ (readv program (get f 1) (get pm-code :1stmode)) (readv program (get f 2) (get pm-code :2ndmode))))}
-                              ;; mult
-                              2 {:pc (+ pc (count f))
+                              MUL {:pc (+ pc (count f))
                                  :program (assoc program (get f 3) (* (readv program (get f 1) (get pm-code :1stmode)) (readv program (get f 2) (get pm-code :2ndmode))))}
-                              ;; input
-                              3 {:pc (+ pc (count f))
+                              IN {:pc (+ pc (count f))
                                  :program (assoc program (get f 1) input)}
-                              ;; output
-                              4 {:pc (+ pc (count f))
+                              OUT {:pc (+ pc (count f))
                                  :program program}
-                              ;; jump if true
-                              5 {:pc (if (not= 0 (readv program (get f 1) (get pm-code :1stmode))) (readv program (get f 2) (get pm-code :2ndmode)) (+ pc (count f)))
+                              JMPT {:pc (if (not= 0 (readv program (get f 1) (get pm-code :1stmode))) (readv program (get f 2) (get pm-code :2ndmode)) (+ pc (count f)))
                                  :program program}
-                              ;; jump if false
-                              6 {:pc (if (zero? (readv program (get f 1) (get pm-code :1stmode))) (readv program (get f 2) (get pm-code :2ndmode)) (+ pc (count f)))
+                              JMPF {:pc (if (zero? (readv program (get f 1) (get pm-code :1stmode))) (readv program (get f 2) (get pm-code :2ndmode)) (+ pc (count f)))
                                  :program program}
-                              ;; less than
-                              7 {:pc (+ pc (count f))
+                              LT {:pc (+ pc (count f))
                                  :program (assoc program (get f 3) (if (< (readv program (get f 1) (get pm-code :1stmode)) (readv program (get f 2) (get pm-code :2ndmode))) 1 0))}
-                              ;; equals
-                              8 {:pc (+ pc (count f))
+                              EQ {:pc (+ pc (count f))
                                  :program (assoc program (get f 3) (if (= (readv program (get f 1) (get pm-code :1stmode)) (readv program (get f 2) (get pm-code :2ndmode))) 1 0))}
                               (throw (Exception. (format "FAIL: unexpected opcode. got: %d" op))))
              outputs (if (= (get pm-code :rawop) 4) (conj outputs (readv program (get f 1) (get pm-code :1stmode))) outputs)]
