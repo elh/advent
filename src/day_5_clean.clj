@@ -1,7 +1,7 @@
 (ns day-5-clean
   (:require [clojure.string :as str]))
 
-;; opcodes
+;; Opcodes
 (def ADD 1)
 (def MUL 2)
 (def IN 3)
@@ -12,13 +12,13 @@
 (def EQ 8)
 (def HALT 99)
 
-;; integer as vector of digits
 (defn- digits [n]
   (for [d (str n)]
     (- (byte d) 48)))
 
-;; parse instruction parameter mode and opcode
-(defn- param-mode-code [op]
+(defn- param-mode-code
+  "Parse instruction parameter mode and opcode."
+  [op]
   (let [ds (digits op)
         padded-ds (concat (for [_ (range (- 5 (count ds)))] 0) ds)]
     {:1stmode (nth padded-ds 2)
@@ -26,9 +26,10 @@
      :3rdmode (nth padded-ds 0)
      :rawop (last padded-ds)}))
 
-;; instruction frame
-(defn- frame [program pc]
-  (let [l (condp = (get (param-mode-code (nth program pc)) :rawop)
+(defn- frame
+  "Read instruction frame at the program counter"
+  [program pc]
+  (let [l (condp = (:rawop (param-mode-code (nth program pc)))
             IN 2
             OUT 2
             JMPT 3
@@ -37,13 +38,15 @@
             4)]
     (subvec program pc (min (+ pc l) (count program)))))
 
-;; read value respecting parameter mode: immediate or position
-(defn- readv [program value mode]
+(defn- read-v
+  "Read value respecting parameter mode: immediate or position."
+  [program value mode]
   (if (= mode 1)
     value
     (get program value)))
 
 (defn run
+  "Run an Intcode program."
   ([program input] (run program input 0 []))
   ([program input pc outputs]
    (let [f (frame program pc)
@@ -51,31 +54,33 @@
      (if (= op HALT)
        outputs
        (let [pm-code (param-mode-code op)
-             arg1 (readv program (get f 1) (get pm-code :1stmode))
-             arg2 (readv program (get f 2) (get pm-code :2ndmode))
-             next (condp = (get pm-code :rawop)
-                    ADD {:pc (+ pc (count f))
+             arg1 (read-v program (get f 1) (:1stmode pm-code))
+             arg2 (read-v program (get f 2) (:2ndmode pm-code))
+             next-pc (+ pc (count f)) ;; if not jumping
+             next (condp = (:rawop pm-code)
+                    ADD {:pc next-pc
                          :program (assoc program (get f 3) (+ arg1 arg2))}
-                    MUL {:pc (+ pc (count f))
+                    MUL {:pc next-pc
                          :program (assoc program (get f 3) (* arg1 arg2))}
-                    IN {:pc (+ pc (count f))
+                    IN {:pc next-pc
                         :program (assoc program (get f 1) input)}
-                    OUT {:pc (+ pc (count f))
+                    OUT {:pc next-pc
                          :program program}
-                    JMPT {:pc (if (not= 0 arg1) arg2 (+ pc (count f)))
+                    JMPT {:pc (if (not= 0 arg1) arg2 next-pc)
                           :program program}
-                    JMPF {:pc (if (zero? arg1) arg2 (+ pc (count f)))
+                    JMPF {:pc (if (zero? arg1) arg2 next-pc)
                           :program program}
-                    LT {:pc (+ pc (count f))
+                    LT {:pc next-pc
                         :program (assoc program (get f 3) (if (< arg1 arg2) 1 0))}
-                    EQ {:pc (+ pc (count f))
+                    EQ {:pc next-pc
                         :program (assoc program (get f 3) (if (= arg1 arg2) 1 0))}
                     (throw (Exception. (format "FAIL: unexpected opcode. got: %d" op))))
-             outputs (if (= (get pm-code :rawop) 4) (conj outputs arg1) outputs)]
-         (run (get next :program) input (get next :pc) outputs))))))
+             outputs (if (= (:rawop pm-code) OUT) (conj outputs arg1) outputs)]
+         (run (:program next) input (:pc next) outputs))))))
 
-;; parse Intcode program from string to vector of integers
-(defn parse-program [s]
+(defn parse-program
+  "Parse Intcode program from string to vector of integers."
+  [s]
   (vec (map #(Integer/parseInt %) (map str/trim-newline (str/split s #",")))))
 
 (defn -main [& args]
