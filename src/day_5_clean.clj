@@ -1,7 +1,7 @@
 (ns day-5-clean
   (:require [clojure.string :as str]))
 
-; copied this from SO
+;; copied this from SO
 (defn digits [n]
   (for [d (str n)]
     (- (byte d) 48)))
@@ -26,53 +26,50 @@
 
 (defn readv [program value mode]
   (if (= mode 1)
-    value ; immediate
-    (get program value))); positional
+    value                 ;; immediate
+    (get program value))) ;; positional
 
 (defn run
-  ([program input] (run program input 0))
-  ([program input pc]
+  ([program input] (run program input 0 []))
+  ([program input pc outputs]
    (let [f (frame program pc)
          op (first f)]
-     (if (= op 99) ; exit
+     (if (= op 99) ;; exit
        (do
          (println "exit!")
-         program)
+         outputs)
        (let [pm-code (param-mode-code op)
              nextprogram-pc (case (get pm-code :rawop)
-                              ; add
+                              ;; add
                               1 {:pc (+ pc (count f))
                                  :program (assoc program (get f 3) (+ (readv program (get f 1) (get pm-code :1stmode)) (readv program (get f 2) (get pm-code :2ndmode))))}
-                              ; mult
+                              ;; mult
                               2 {:pc (+ pc (count f))
                                  :program (assoc program (get f 3) (* (readv program (get f 1) (get pm-code :1stmode)) (readv program (get f 2) (get pm-code :2ndmode))))}
-                              ; input
-                              3 (do
-                                  (println "input: ", input, "address: ", (get f 1))
-                                  {:pc (+ pc (count f))
-                                   :program (assoc program (get f 1) input)})
-                              ; output
-                              4 (do
-                                  (println "output: " (readv program (get f 1) (get pm-code :1stmode)) "arg1_mode: " (get pm-code :1stmode))
-                                  {:pc (+ pc (count f))
-                                   :program program})
-                              ; jump if true
+                              ;; input
+                              3 {:pc (+ pc (count f))
+                                 :program (assoc program (get f 1) input)}
+                              ;; output
+                              4 {:pc (+ pc (count f))
+                                 :program program}
+                              ;; jump if true
                               5 {:pc (if (not= 0 (readv program (get f 1) (get pm-code :1stmode))) (readv program (get f 2) (get pm-code :2ndmode)) (+ pc (count f)))
                                  :program program}
-                              ; jump if false
+                              ;; jump if false
                               6 {:pc (if (zero? (readv program (get f 1) (get pm-code :1stmode))) (readv program (get f 2) (get pm-code :2ndmode)) (+ pc (count f)))
                                  :program program}
-                              ; less than
+                              ;; less than
                               7 {:pc (+ pc (count f))
                                  :program (assoc program (get f 3) (if (< (readv program (get f 1) (get pm-code :1stmode)) (readv program (get f 2) (get pm-code :2ndmode))) 1 0))}
-                              ; equals
+                              ;; equals
                               8 {:pc (+ pc (count f))
                                  :program (assoc program (get f 3) (if (= (readv program (get f 1) (get pm-code :1stmode)) (readv program (get f 2) (get pm-code :2ndmode))) 1 0))}
-                              (throw (Exception. (format "FAIL: unexpected opcode. got: %d" op))))]
-         (run (get nextprogram-pc :program) input (get nextprogram-pc :pc)))))))
+                              (throw (Exception. (format "FAIL: unexpected opcode. got: %d" op))))
+             outputs (if (= (get pm-code :rawop) 4) (conj outputs (readv program (get f 1) (get pm-code :1stmode))) outputs)]
+         (run (get nextprogram-pc :program) input (get nextprogram-pc :pc) outputs))))))
 
 (defn -main [& args]
   (when (not= (count args) 1) (throw (Exception. "FAIL: expects input file as cmdline arg.")))
   (let [input (vec (map #(Integer/parseInt %) (map str/trim-newline (str/split (slurp (first args)) #","))))]
-    (println "part 1:" (time (run input 1)))
-    (println "part 2:" (time (run input 5)))))
+    (println "PART 1:" (time (run input 1)))
+    (println "PART 2:" (time (run input 5)))))
