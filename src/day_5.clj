@@ -45,8 +45,8 @@
   ([program input pc]
    (let [f (frame program pc)
          op (first f)]
-     (println "PROGRAM: " program "PC: " pc)
-     (println "FRAME: " f)
+    ;;  (println "PROGRAM: " program "PC: " pc)
+    ;;  (println "FRAME: " f)
      (if (= op 99) ; exit
        (do
          (println "exit!")

@@ -56,10 +56,9 @@
   ([program input pc outputs]
    (let [f (frame program pc)
          op (first f)]
+     (when verbose (println {:outputs outputs :program program}))
      (if (= op HALT)
-       (do
-         (when verbose (println program))
-         outputs)
+       {:outputs outputs :program program}
        (let [pm-code (param-mode-code op)
              arg1 (read-v program (get f 1) (:1stmode pm-code))
              arg2 (read-v program (get f 2) (:2ndmode pm-code))
