@@ -52,8 +52,9 @@
 
 (defn run
   "Run an Intcode program."
-  ([program input] (run program input 0 []))
-  ([program input pc outputs]
+  ([program] (run program [] [] 0))
+  ([program inputs] (run program inputs [] 0))
+  ([program inputs outputs pc]
    (let [f (frame program pc)
          op (first f)]
      (when verbose (println {:outputs outputs :program program}))
@@ -69,7 +70,7 @@
                     MUL {:pc next-pc
                          :program (assoc program (get f 3) (* arg1 arg2))}
                     IN {:pc next-pc
-                        :program (assoc program (get f 1) input)}
+                        :program (assoc program (get f 1) (first inputs))}
                     OUT {:pc next-pc
                          :program program}
                     JMPT {:pc (if (not= 0 arg1) arg2 next-pc)
@@ -81,8 +82,9 @@
                     EQ {:pc next-pc
                         :program (assoc program (get f 3) (if (= arg1 arg2) 1 0))}
                     (throw (Exception. (format "FAIL: unexpected opcode. got: %d" op))))
+             inputs (if (= (:rawop pm-code) IN) (rest inputs) inputs)
              outputs (if (= (:rawop pm-code) OUT) (conj outputs arg1) outputs)]
-         (run (:program next) input (:pc next) outputs))))))
+         (run (:program next) inputs outputs (:pc next)))))))
 
 (defn parse-program
   "Parse Intcode program from string to vector of integers."
