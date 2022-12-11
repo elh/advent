@@ -23,18 +23,18 @@
 
 (defn- param-mode-code
   "Parse instruction parameter mode and opcode."
-  [op]
-  (let [ds (digits op)
+  [inst]
+  (let [ds (digits inst)
         padded-ds (concat (for [_ (range (- 5 (count ds)))] 0) ds)]
     {:1stmode (nth padded-ds 2)
      :2ndmode (nth padded-ds 1)
      :3rdmode (nth padded-ds 0)
-     :rawop (last padded-ds)}))
+     :op (last padded-ds)}))
 
 (defn- frame
   "Read instruction frame at the program counter."
   [program pc]
-  (let [l (condp = (:rawop (param-mode-code (nth program pc)))
+  (let [l (condp = (:op (param-mode-code (nth program pc)))
             IN 2
             OUT 2
             JMPT 3
@@ -64,7 +64,8 @@
              arg1 (read-v program (get f 1) (:1stmode pm-code))
              arg2 (read-v program (get f 2) (:2ndmode pm-code))
              next-pc (+ pc (count f)) ;; if not jumping
-             next (condp = (:rawop pm-code)
+             ;; TODO: refactor to just be direct expressions for progrm, inputs, outputs, pc. single check for valid args
+             next (condp = (:op pm-code)
                     ADD {:pc next-pc
                          :program (assoc program (get f 3) (+ arg1 arg2))}
                     MUL {:pc next-pc
@@ -82,8 +83,8 @@
                     EQ {:pc next-pc
                         :program (assoc program (get f 3) (if (= arg1 arg2) 1 0))}
                     (throw (Exception. (format "FAIL: unexpected opcode. got: %d" op))))
-             inputs (if (= (:rawop pm-code) IN) (rest inputs) inputs)
-             outputs (if (= (:rawop pm-code) OUT) (conj outputs arg1) outputs)]
+             inputs (if (= (:op pm-code) IN) (rest inputs) inputs)
+             outputs (if (= (:op pm-code) OUT) (conj outputs arg1) outputs)]
          (run (:program next) inputs outputs (:pc next)))))))
 
 (defn parse-program
