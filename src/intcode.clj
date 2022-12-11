@@ -6,7 +6,6 @@
 
 (def verbose false)
 
-;; Opcodes
 (def ADD 1)
 (def MUL 2)
 (def IN 3)
@@ -17,24 +16,20 @@
 (def EQ 8)
 (def HALT 99)
 
-(defn- digits [n]
-  (for [d (str n)]
-    (- (byte d) 48)))
-
-(defn- param-mode-code
+(defn- param-mode-opcode
   "Parse instruction parameter mode and opcode."
   [inst]
-  (let [ds (digits inst)
-        padded-ds (concat (for [_ (range (- 5 (count ds)))] 0) ds)]
-    {:1stmode (nth padded-ds 2)
-     :2ndmode (nth padded-ds 1)
-     :3rdmode (nth padded-ds 0)
+  (let [digits (for [d (str inst)] (- (byte d) 48))
+        padded-ds (concat (for [_ (range (- 5 (count digits)))] 0) digits)]
+    {:1st-mode (nth padded-ds 2)
+     :2nd-mode (nth padded-ds 1)
+     :3rd-mode (nth padded-ds 0)
      :op (last padded-ds)}))
 
 (defn- frame
   "Read instruction frame at the program counter."
   [program pc]
-  (let [l (condp = (:op (param-mode-code (nth program pc)))
+  (let [l (condp = (:op (param-mode-opcode (nth program pc)))
             IN 2
             OUT 2
             JMPT 3
@@ -46,9 +41,7 @@
 (defn- read-v
   "Read value respecting parameter mode: immediate or position."
   [program value mode]
-  (if (= mode 1)
-    value
-    (get program value)))
+  (if (= mode 1) value (get program value)))
 
 (defn run
   "Run an Intcode program."
@@ -56,36 +49,28 @@
   ([program inputs] (run program inputs [] 0))
   ([program inputs outputs pc]
    (let [f (frame program pc)
-         op (first f)]
+         rawop (first f)
+         pm-op (param-mode-opcode rawop)]
      (when verbose (println {:outputs outputs :program program}))
-     (if (= op HALT)
-       {:outputs outputs :program program}
-       (let [pm-code (param-mode-code op)
-             arg1 (read-v program (get f 1) (:1stmode pm-code))
-             arg2 (read-v program (get f 2) (:2ndmode pm-code))
-             next-pc (+ pc (count f)) ;; if not jumping
-             ;; TODO: refactor to just be direct expressions for progrm, inputs, outputs, pc. single check for valid args
-             next (condp = (:op pm-code)
-                    ADD {:pc next-pc
-                         :program (assoc program (get f 3) (+ arg1 arg2))}
-                    MUL {:pc next-pc
-                         :program (assoc program (get f 3) (* arg1 arg2))}
-                    IN {:pc next-pc
-                        :program (assoc program (get f 1) (first inputs))}
-                    OUT {:pc next-pc
-                         :program program}
-                    JMPT {:pc (if (not= 0 arg1) arg2 next-pc)
-                          :program program}
-                    JMPF {:pc (if (zero? arg1) arg2 next-pc)
-                          :program program}
-                    LT {:pc next-pc
-                        :program (assoc program (get f 3) (if (< arg1 arg2) 1 0))}
-                    EQ {:pc next-pc
-                        :program (assoc program (get f 3) (if (= arg1 arg2) 1 0))}
-                    (throw (Exception. (format "FAIL: unexpected opcode. got: %d" op))))
-             inputs (if (= (:op pm-code) IN) (rest inputs) inputs)
-             outputs (if (= (:op pm-code) OUT) (conj outputs arg1) outputs)]
-         (run (:program next) inputs outputs (:pc next)))))))
+     (cond
+       (= rawop HALT) {:outputs outputs :program program}
+       (not-any? #(= (:op pm-op) %) [ADD MUL IN OUT JMPT JMPF LT EQ HALT]) (throw (Exception. (str "Invalid opcode: " (:op pm-op))))
+       :else (let [arg1 (read-v program (get f 1) (:1st-mode pm-op))
+                   arg2 (read-v program (get f 2) (:2nd-mode pm-op))
+                   pc++ (condp = (:op pm-op)
+                          JMPT (if (not= 0 arg1) arg2 (+ pc (count f)))
+                          JMPF (if (zero? arg1) arg2 (+ pc (count f)))
+                          (+ pc (count f)))
+                   program++ (condp = (:op pm-op)
+                               ADD (assoc program (get f 3) (+ arg1 arg2))
+                               MUL (assoc program (get f 3) (* arg1 arg2))
+                               IN (assoc program (get f 1) (first inputs))
+                               LT (assoc program (get f 3) (if (< arg1 arg2) 1 0))
+                               EQ (assoc program (get f 3) (if (= arg1 arg2) 1 0))
+                               program)
+                   inputs++ (if (= (:op pm-op) IN) (rest inputs) inputs)
+                   outputs++ (if (= (:op pm-op) OUT) (conj outputs arg1) outputs)]
+               (run program++ inputs++ outputs++ pc++))))))
 
 (defn parse-program
   "Parse Intcode program from string to vector of integers."
