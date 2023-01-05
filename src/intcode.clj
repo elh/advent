@@ -75,4 +75,4 @@
 (defn parse-program
   "Parse Intcode program from string to vector of integers."
   [s]
-  (vec (map #(Integer/parseInt %) (map str/trim-newline (str/split s #",")))))
+  (vec (map #(Integer/parseInt %) (map str/trim-newline (str/split (str/replace s #"\n" "") #",")))))
