@@ -53,7 +53,8 @@
          pm-op (param-mode-opcode rawop)]
      (when verbose (println {:outputs outputs :program program}))
      (cond
-       (= rawop HALT) {:outputs outputs :program program}
+       (= rawop HALT) {:outputs outputs :program program :pc pc :status :halted}
+       (and (= (:op pm-op) IN) (empty? inputs)) {:outputs outputs :program program :pc pc :status :waiting-for-input}
        (not-any? #(= (:op pm-op) %) [ADD MUL IN OUT JMPT JMPF LT EQ HALT]) (throw (Exception. (str "Invalid opcode: " (:op pm-op))))
        :else (let [arg1 (read-v program (get f 1) (:1st-mode pm-op))
                    arg2 (read-v program (get f 2) (:2nd-mode pm-op))
